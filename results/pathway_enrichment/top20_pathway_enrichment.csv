@@ -1,0 +1,21 @@
+Gene_set,Term,Overlap,Adjusted P-value
+KEGG_2021_Human,Protein processing in endoplasmic reticulum,55/171,9.180104177994349e-16
+GO_Biological_Process_2023,Mitochondrial Gene Expression (GO:0140053),39/103,1.950553661882445e-12
+GO_Biological_Process_2023,Mitochondrial Translation (GO:0032543),36/98,3.9178799924680416e-11
+KEGG_2021_Human,RNA transport,48/186,6.557096128682821e-10
+GO_Biological_Process_2023,Translation (GO:0006412),55/234,9.323553064710473e-09
+GO_Biological_Process_2023,Ribosome Biogenesis (GO:0042254),42/155,1.7103279711633163e-08
+GO_Biological_Process_2023,Proteasome-Mediated Ubiquitin-Dependent Protein Catabolic Process (GO:0043161),66/319,2.1224262868602783e-08
+GO_Biological_Process_2023,mRNA Processing (GO:0006397),50/214,5.250396412821239e-08
+GO_Biological_Process_2023,Ubiquitin-Dependent Protein Catabolic Process (GO:0006511),71/367,6.812871583787015e-08
+GO_Biological_Process_2023,Gene Expression (GO:0010467),61/296,7.873168439936633e-08
+GO_Biological_Process_2023,Intracellular Protein Transport (GO:0006886),65/325,7.873168439936633e-08
+KEGG_2021_Human,Cell cycle,34/124,1.021653706989709e-07
+GO_Biological_Process_2023,protein-RNA Complex Assembly (GO:0022618),39/150,1.368152057937124e-07
+GO_Biological_Process_2023,"mRNA Splicing, Via Spliceosome (GO:0000398)",47/211,5.677523781525054e-07
+GO_Biological_Process_2023,Protein Polyubiquitination (GO:0000209),49/226,6.175322731644504e-07
+GO_Biological_Process_2023,Protein Localization To Nucleus (GO:0034504),33/122,7.975720110015079e-07
+GO_Biological_Process_2023,Ubiquitin-Dependent ERAD Pathway (GO:0030433),24/73,1.6426197322920684e-06
+KEGG_2021_Human,Ubiquitin mediated proteolysis,34/140,2.22484042241304e-06
+GO_Biological_Process_2023,Nuclear Export (GO:0051168),19/49,2.6740469204937568e-06
+GO_Biological_Process_2023,RNA Processing (GO:0006396),41/183,3.5629787852671707e-06

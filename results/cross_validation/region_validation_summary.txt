@@ -1,0 +1,6 @@
+m6A site region distribution (top 100 significant genes):
+3'UTR: 61%
+CDS: 34%
+5'UTR: 4%
+Unmapped: 1%
+Consistent with established m6A biology (stop-codon/3'UTR enrichment).

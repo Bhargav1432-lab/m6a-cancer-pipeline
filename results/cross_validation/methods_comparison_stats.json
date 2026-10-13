@@ -1,0 +1,15 @@
+{
+  "m6anet_positions_evaluated": 187022,
+  "xpore_positions_tested": 7200000,
+  "xpore_significant_positions": 138512,
+  "cross_validated_genes": 1745,
+  "expected_by_chance": 944,
+  "enrichment_ratio": 1.85,
+  "higher_in_lung": 1362,
+  "higher_in_liver": 383,
+  "asymmetry_ratio": 3.6,
+  "ultra_significant_padj0": 203,
+  "max_diff_rate": 0.999981,
+  "median_diff_rate": 0.5857,
+  "utr3_percent": 61
+}

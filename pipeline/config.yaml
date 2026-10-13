@@ -1,0 +1,44 @@
+samples:
+  - A549_rep6
+  - HepG2_rep6
+
+conditions:
+  A549:
+    - A549_rep6
+  HepG2:
+    - HepG2_rep6
+
+outdir: "results"
+
+reference_transcriptome: "reference/GRCh38_gencode_v39_transcriptome.fa"
+
+# m6Anet parameters
+m6anet:
+  probability_threshold: 0.9
+  num_iterations: 1000
+
+# xPore parameters
+xpore:
+  config: "xpore_tutorial/config.yml"
+  fdr_threshold: 0.05
+
+# Pathway enrichment
+enrichment:
+  gene_sets:
+    - "KEGG_2021_Human"
+    - "GO_Biological_Process_2023"
+  fdr_threshold: 0.05
+  top_n: 20
+
+# TCGA validation genes (top hits from differential analysis)
+tcga_genes:
+  - CD24
+  - AHCY
+  - UBE3C
+  - RPS6KA3
+  - CTCF
+  - FADD
+
+tcga_studies:
+  lung: "luad_tcga"
+  liver: "lihc_tcga"

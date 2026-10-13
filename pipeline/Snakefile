@@ -1,0 +1,206 @@
+# Snakemake Pipeline: Direct RNA m6A Methylation Mapping
+# Team 12 — DNA Sequencing and Technologies
+# Usage: snakemake --snakefile pipeline/Snakefile --cores 8
+
+configfile: "pipeline/config.yaml"
+
+SAMPLES = config["samples"]
+OUTDIR  = config["outdir"]
+REF     = config["reference_transcriptome"]
+
+# ─────────────────────────────────────────────
+# RULE: ALL — define final outputs
+# ─────────────────────────────────────────────
+rule all:
+    input:
+        # m6Anet outputs
+        expand("{outdir}/m6anet/{sample}/data.site_proba.csv", outdir=OUTDIR, sample=SAMPLES),
+        # xPore differential output
+        f"{OUTDIR}/xpore/diffmod.table",
+        f"{OUTDIR}/xpore/diffmod_with_padj.csv",
+        # Cross-validation
+        f"{OUTDIR}/cross_validation/cross_validated_genes.csv",
+        f"{OUTDIR}/cross_validation/final_ranked_results.csv",
+        # Pathway enrichment
+        f"{OUTDIR}/pathway_enrichment/top20_pathway_enrichment.csv",
+        # Region validation
+        f"{OUTDIR}/cross_validation/region_validation_summary.txt",
+        # TCGA validation
+        f"{OUTDIR}/tcga_validation/tcga_expression_results.json"
+
+
+# ─────────────────────────────────────────────
+# STAGE 1: ALIGNMENT (minimap2)
+# ─────────────────────────────────────────────
+rule align:
+    input:
+        fastq = "data/{sample}/reads.fastq.gz",
+        ref   = REF
+    output:
+        bam = "data/{sample}/aligned.bam",
+        bai = "data/{sample}/aligned.bam.bai"
+    threads: 8
+    shell:
+        """
+        minimap2 -ax splice -uf -k14 --secondary=no \
+            {input.ref} {input.fastq} \
+            | samtools sort -o {output.bam}
+        samtools index {output.bam}
+        """
+
+
+# ─────────────────────────────────────────────
+# STAGE 2: SIGNAL REALIGNMENT (f5c eventalign)
+# ─────────────────────────────────────────────
+rule eventalign:
+    input:
+        bam   = "data/{sample}/aligned.bam",
+        fast5 = "data/{sample}/fast5/",
+        ref   = REF,
+        fastq = "data/{sample}/reads.fastq.gz"
+    output:
+        eventalign = "data/{sample}/eventalign.txt",
+        summary    = "data/{sample}/eventalign_summary.txt"
+    threads: 8
+    shell:
+        """
+        f5c eventalign \
+            --reads {input.fastq} \
+            --bam {input.bam} \
+            --genome {input.ref} \
+            --fast5-path {input.fast5} \
+            --summary {output.summary} \
+            --scale-events \
+            --print-read-names \
+            > {output.eventalign}
+        """
+
+
+# ─────────────────────────────────────────────
+# STAGE 3a: m6Anet DATAPREP
+# ─────────────────────────────────────────────
+rule m6anet_dataprep:
+    input:
+        eventalign = "data/{sample}/eventalign.txt"
+    output:
+        directory("data/{sample}/dataprep")
+    threads: 4
+    shell:
+        """
+        m6anet dataprep \
+            --eventalign {input.eventalign} \
+            --out_dir {output} \
+            --n_processes {threads}
+        """
+
+
+# ─────────────────────────────────────────────
+# STAGE 3b: m6Anet INFERENCE
+# ─────────────────────────────────────────────
+rule m6anet_inference:
+    input:
+        dataprep = "data/{sample}/dataprep"
+    output:
+        site_proba   = "{outdir}/m6anet/{sample}/data.site_proba.csv",
+        indiv_proba  = "{outdir}/m6anet/{sample}/data.indiv_proba.csv"
+    params:
+        outdir = "{outdir}/m6anet/{sample}"
+    threads: 4
+    shell:
+        """
+        m6anet inference \
+            --input_dir {input.dataprep} \
+            --out_dir {params.outdir} \
+            --n_processes {threads} \
+            --num_iterations 1000
+        """
+
+
+# ─────────────────────────────────────────────
+# STAGE 4a: xPore DATAPREP (per sample)
+# ─────────────────────────────────────────────
+rule xpore_dataprep:
+    input:
+        eventalign = "data/{sample}/eventalign.txt"
+    output:
+        directory("data/{sample}/xpore_dataprep")
+    threads: 4
+    shell:
+        """
+        xpore dataprep \
+            --eventalign {input.eventalign} \
+            --out_dir {output} \
+            --n_processes {threads}
+        """
+
+
+# ─────────────────────────────────────────────
+# STAGE 4b: xPore DIFFMOD (comparative)
+# ─────────────────────────────────────────────
+rule xpore_diffmod:
+    input:
+        config = "xpore_tutorial/config.yml",
+        a549   = "data/A549_rep6/xpore_dataprep",
+        hepg2  = "data/HepG2_rep6/xpore_dataprep"
+    output:
+        table   = f"{OUTDIR}/xpore/diffmod.table",
+        padj    = f"{OUTDIR}/xpore/diffmod_with_padj.csv"
+    params:
+        outdir = f"{OUTDIR}/xpore"
+    shell:
+        """
+        xpore diffmod \
+            --config {input.config} \
+            --out_dir {params.outdir}
+        python -c "
+import pandas as pd
+from statsmodels.stats.multitest import multipletests
+df = pd.read_csv('{output.table}', sep='\t')
+pval_col = [c for c in df.columns if 'pval' in c.lower()][0]
+_, padj, _, _ = multipletests(df[pval_col].fillna(1), method='fdr_bh')
+df['padj'] = padj
+df.to_csv('{output.padj}', index=False)
+print('FDR correction done.')
+        "
+        """
+
+
+# ─────────────────────────────────────────────
+# STAGE 5: CROSS-VALIDATION
+# ─────────────────────────────────────────────
+rule cross_validate:
+    input:
+        m6anet = expand("{outdir}/m6anet/{sample}/data.site_proba.csv",
+                        outdir=OUTDIR, sample=SAMPLES),
+        xpore  = f"{OUTDIR}/xpore/diffmod_with_padj.csv"
+    output:
+        genes   = f"{OUTDIR}/cross_validation/cross_validated_genes.csv",
+        ranked  = f"{OUTDIR}/cross_validation/final_ranked_results.csv",
+        regions = f"{OUTDIR}/cross_validation/region_validation_summary.txt"
+    script:
+        "pipeline/scripts/cross_validate.py"
+
+
+# ─────────────────────────────────────────────
+# STAGE 6: PATHWAY ENRICHMENT
+# ─────────────────────────────────────────────
+rule pathway_enrichment:
+    input:
+        genes = f"{OUTDIR}/cross_validation/cross_validated_genes.csv"
+    output:
+        results = f"{OUTDIR}/pathway_enrichment/pathway_enrichment_results.csv",
+        top20   = f"{OUTDIR}/pathway_enrichment/top20_pathway_enrichment.csv"
+    script:
+        "pipeline/scripts/pathway_enrichment.py"
+
+
+# ─────────────────────────────────────────────
+# STAGE 7: TCGA VALIDATION
+# ─────────────────────────────────────────────
+rule tcga_validation:
+    input:
+        ranked = f"{OUTDIR}/cross_validation/final_ranked_results.csv"
+    output:
+        json = f"{OUTDIR}/tcga_validation/tcga_expression_results.json"
+    script:
+        "tcga_query.py"
