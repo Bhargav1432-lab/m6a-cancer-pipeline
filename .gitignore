@@ -35,3 +35,8 @@ desktop.ini
 .vscode/
 .idea/
 .ipynb_checkpoints/
+
+# Documents & Presentation notes
+*.pdf
+PPT_Content*.md
+
