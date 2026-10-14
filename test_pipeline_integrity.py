@@ -97,7 +97,8 @@ def run_tests():
         "figures/fig1_region_distribution.png",
         "figures/fig2_modification_direction.png",
         "figures/fig3_pathway_enrichment.png",
-        "figures/fig4_tcga_hazard_ratios.png"
+        "figures/fig4_tcga_hazard_ratios.png",
+        "figures/fig5_tcga_lihc_hazard_ratios.png"
     ]
     missing_figs = [f for f in figs if not os.path.exists(f) or os.path.getsize(f) == 0]
     if not missing_figs:

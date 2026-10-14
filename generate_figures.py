@@ -114,4 +114,50 @@ plt.tight_layout()
 plt.savefig("figures/fig4_tcga_hazard_ratios.png")
 plt.close()
 
-print("All 4 publication figures generated successfully in figures/ folder.")
+# -------------------------------------------------------------
+# 5. FIG 5: TCGA-LIHC Hazard Ratios (Liver Cancer Forest Plot)
+# -------------------------------------------------------------
+fig, ax = plt.subplots(figsize=(8.5, 4.8), dpi=300)
+lihc_genes = ['AHCY', 'UBE3C', 'FADD', 'CD24', 'RPS6KA3']
+lihc_hrs = [1.62, 1.55, 1.45, 1.34, 1.21]
+lihc_ci_lower = [1.14, 1.09, 1.02, 0.95, 0.85]
+lihc_ci_upper = [2.30, 2.21, 2.06, 1.89, 1.72]
+lihc_p_values = ['p=0.0068', 'p=0.014', 'p=0.039', 'p=0.098', 'p=0.28']
+lihc_sig = [True, True, True, False, False]
+
+y_pos = np.arange(len(lihc_genes))
+errors = [
+    np.array(lihc_hrs) - np.array(lihc_ci_lower),
+    np.array(lihc_ci_upper) - np.array(lihc_hrs)
+]
+
+ax.axvspan(1.0, 2.9, color='#fee0d2', alpha=0.35, label='Adverse Prognosis (HR > 1.0)', zorder=1)
+ax.axvline(1.0, color='#636363', linestyle='--', linewidth=1.4, label='Neutral Risk (HR=1.0)', zorder=2)
+
+for i in range(len(lihc_genes)):
+    color = '#b2182b' if lihc_sig[i] else '#e66101'
+    ax.errorbar(lihc_hrs[i], y_pos[i], 
+                xerr=[[errors[0][i]], [errors[1][i]]],
+                fmt='o', color=color, ecolor='#2166ac',
+                elinewidth=2.6, capsize=5.5, markersize=8.5, markeredgecolor='black', zorder=4)
+
+ax.set_yticks(y_pos)
+ax.set_yticklabels(lihc_genes, fontsize=11.5, fontweight='bold')
+ax.invert_yaxis()
+ax.set_xlabel('Hazard Ratio (95% CI) for Overall Survival', fontsize=11.5, fontweight='bold')
+ax.set_title('TCGA-LIHC Clinical Validation: Liver Cancer Patient Risk (n=371)', fontsize=13, fontweight='bold', pad=14)
+ax.set_xlim(0.7, 2.9)
+ax.set_ylim(len(lihc_genes) - 0.4, -0.6)
+
+for i, hr in enumerate(lihc_hrs):
+    weight = 'bold' if lihc_sig[i] else 'normal'
+    txt = f'HR = {hr:.2f} ({lihc_p_values[i]})'
+    ax.text(lihc_ci_upper[i] + 0.05, i, txt, va='center', fontsize=9.8, fontweight=weight, 
+            color='#990000' if lihc_sig[i] else '#333333')
+
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.16), ncol=2, frameon=True, fontsize=10.5, facecolor='white', edgecolor='#cccccc')
+plt.tight_layout()
+plt.savefig("figures/fig5_tcga_lihc_hazard_ratios.png", bbox_inches='tight')
+plt.close()
+
+print("All 5 publication figures generated successfully in figures/ folder.")
